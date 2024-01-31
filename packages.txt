@@ -1,0 +1,2 @@
+# `brew install` or `sudo port install`
+poppler-utils
