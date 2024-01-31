@@ -1,0 +1,6 @@
+openai
+pdf2image
+Pillow
+PyPDF2
+python-dotenv
+tenacity
