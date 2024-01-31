@@ -15,7 +15,7 @@ Before you begin, ensure you have the following installed:
 Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/your-username/pdf_to_md.git
+git clone https://github.com/scottkwong/pdf-to-md.git
 cd pdf_to_md
 ```
 
