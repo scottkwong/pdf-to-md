@@ -1,6 +1,7 @@
 openai
 pdf2image
 Pillow
+pycryptodome==3.14.1
 PyPDF2
 python-dotenv
 tenacity
