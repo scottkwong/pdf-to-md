@@ -9,6 +9,7 @@ import argparse
 import base64
 import io
 import os
+import sys
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -230,9 +231,9 @@ if __name__ == "__main__":
         description="Convert a PDF to a Markdown file using GPT-4 visual reasoning."
     )
     parser.add_argument(
-        'pdf_path', 
+        'target_path', 
         type=str, 
-        help="The path to the input PDF file."
+        help="The path to the input PDF file or directory containing PDF files."
     )
     parser.add_argument(
         '-o', '--output_dir',
@@ -253,12 +254,34 @@ if __name__ == "__main__":
         default=False,
         help="If set, print the markdown text to the screen."
     )
+    parser.add_argument(
+        '-r', '--recursive',
+        action='store_true',
+        default=False,
+        help="If set, treat the target path as a directory and process all PDF files within it recursively."
+    )
     args = parser.parse_args()
-    pdf_path = args.pdf_path
-    # pdf_path = "Nexus Materials_NY Common.pdf"
+    target_path = args.target_path
     processing_mode = args.mode
-    output_dir = args.output_dir or os.path.dirname(pdf_path)
+    output_dir = args.output_dir
     verbose = args.verbose
-    out = pdf_to_markdown(pdf_path, output_dir, processing_mode, verbose)
-    print(f"Output file: {out}")
+    recursive = args.recursive
 
+    if recursive:
+        if not os.path.isdir(target_path):
+            print(f"Error: The path '{target_path}' is not a directory.")
+            sys.exit(1)
+        for root, dirs, files in os.walk(target_path):
+            for file in files:
+                if file.lower().endswith('.pdf'):
+                    pdf_path = os.path.join(root, file)
+                    output_dir = args.output_dir or os.path.dirname(pdf_path)
+                    out = pdf_to_markdown(pdf_path, output_dir, processing_mode, verbose)
+                    print(f"Output file: {out}")
+    else:
+        if not os.path.isfile(target_path):
+            print(f"Error: The file '{target_path}' does not exist.")
+            sys.exit(1)
+        output_dir = args.output_dir or os.path.dirname(target_path)
+        out = pdf_to_markdown(target_path, output_dir, processing_mode, verbose)
+        print(f"Output file: {out}")
