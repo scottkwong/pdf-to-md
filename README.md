@@ -37,25 +37,35 @@ Before running `pdf_to_md.py`, ensure the shebang line (first line in the file) 
 
 ## Usage
 
-To use the script, you'll need to provide the path to the PDF file you want to convert. The script also supports various options, including specifying an output directory, choosing the processing mode (vision-only or vision-and-text), and a verbose mode for additional output details.
+Convert PDF files to Markdown format using GPT-4's visual reasoning. It supports processing a single file or multiple files within a directory, optionally in parallel. The script provides several options, including output directory specification, processing modes, verbosity for detailed output, and recursive directory processing.
 
-Basic usage:
+### Basic Usage
+
+To convert a PDF file:
 
 ```bash
 ./pdf_to_md.py <path_to_pdf>
 ```
 
-Advanced usage with options:
+### Advanced Usage
+
+To utilize additional options:
 
 ```bash
-./pdf_to_md.py <path_to_pdf> -o <output_directory> -m <mode> -v
+./pdf_to_md.py <path_to_pdf> -o <output_directory> -m <mode> -v -r -p
 ```
 
-Where:
-- `<path_to_pdf>` is the path to your PDF file.
-- `<output_directory>` is the directory where the Markdown file will be saved (optional, defaults to the PDF's directory).
-- `<mode>` is either 'v' for vision-only or 'vt' for vision-and-text (optional, defaults to 'vt').
-- `-v` or `--verbose` prints the markdown text to the screen (optional).
+Options:
+
+- `<path_to_pdf>`: Path to the PDF file or directory containing PDF files.
+- `-o`, `--output_dir <output_directory>`: Destination for Markdown files. Defaults to PDF's location if unspecified.
+- `-m`, `--mode <mode>`: Sets processing mode. Choose 'v' for vision-only or 'vt' for vision-and-text (default: 'vt').
+- `-v`, `--verbose`: Enables verbose output, printing the Markdown text to the console.
+- `-r`, `--recursive`: Processes all PDF files within the target directory recursively.
+- `-p`, `--parallel`: Processes files in parallel during recursive operation.
+
+Ensure to replace `<path_to_pdf>` and `<output_directory>` with your specific paths. The `-m` option allows for tailored processing, while `-v`, `-r`, and `-p` flags offer control over output verbosity, directory traversal, and execution strategy, respectively.
+
 
 ## License
 
