@@ -260,28 +260,50 @@ if __name__ == "__main__":
         default=False,
         help="If set, treat the target path as a directory and process all PDF files within it recursively."
     )
+    parser.add_argument(
+        '-p', '--parallel',
+        action='store_true',
+        default=False,
+        help="If set, process each PDF file in parallel when using recursive mode."
+    )
     args = parser.parse_args()
     target_path = args.target_path
     processing_mode = args.mode
     output_dir = args.output_dir
     verbose = args.verbose
     recursive = args.recursive
+    parallel = args.parallel
+
+    def process_pdf(pdf_path: str, output_dir: str, processing_mode: str, verbose: bool):
+        out = pdf_to_markdown(pdf_path, output_dir, processing_mode, verbose)
+        print(f"Output file: {out}")
 
     if recursive:
         if not os.path.isdir(target_path):
             print(f"Error: The path '{target_path}' is not a directory.")
             sys.exit(1)
-        for root, dirs, files in os.walk(target_path):
-            for file in files:
-                if file.lower().endswith('.pdf'):
-                    pdf_path = os.path.join(root, file)
-                    output_dir = args.output_dir or os.path.dirname(pdf_path)
-                    out = pdf_to_markdown(pdf_path, output_dir, processing_mode, verbose)
-                    print(f"Output file: {out}")
+        if parallel:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor() as executor:
+                futures = []
+                for root, dirs, files in os.walk(target_path):
+                    for file in files:
+                        if file.lower().endswith('.pdf'):
+                            pdf_path = os.path.join(root, file)
+                            output_dir = args.output_dir or os.path.dirname(pdf_path)
+                            futures.append(executor.submit(process_pdf, pdf_path, output_dir, processing_mode, verbose))
+                for future in futures:
+                    future.result()
+        else:
+            for root, dirs, files in os.walk(target_path):
+                for file in files:
+                    if file.lower().endswith('.pdf'):
+                        pdf_path = os.path.join(root, file)
+                        output_dir = args.output_dir or os.path.dirname(pdf_path)
+                        process_pdf(pdf_path, output_dir, processing_mode, verbose)
     else:
         if not os.path.isfile(target_path):
             print(f"Error: The file '{target_path}' does not exist.")
             sys.exit(1)
         output_dir = args.output_dir or os.path.dirname(target_path)
-        out = pdf_to_markdown(target_path, output_dir, processing_mode, verbose)
-        print(f"Output file: {out}")
+        process_pdf(target_path, output_dir, processing_mode, verbose)
