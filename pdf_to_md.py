@@ -186,10 +186,11 @@ def _pdf_to_images_with_storage(
         for i, image in enumerate(images):
             image.save(os.path.join(image_folder, f'{base_name}_image_{i}.png'))
     else:
-        images = [
-            Image.open(os.path.join(image_folder, f)) 
-            for f in os.listdir(image_folder) if f.endswith('.png')
-        ]
+        image_files = sorted(
+            [f for f in os.listdir(image_folder) if f.endswith('.png')],
+            key=lambda x: int(x.rsplit('_', 1)[-1].split('.')[0])
+        )
+        images = [Image.open(os.path.join(image_folder, f)) for f in image_files]
     return images
 
 
