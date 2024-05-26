@@ -1,6 +1,6 @@
 #!/opt/homebrew/anaconda3/envs/pdf_to_md/bin/python
 """
-This script converts a PDF file to a Markdown file using GPT-4 visual reasoning.
+Converts a PDF file or folder to Markdown using GPT-4o visual reasoning.
 
 The script takes an input PDF file path as an argument and produces a Markdown
 file in the same directory with the same name as the PDF file.
@@ -33,16 +33,16 @@ client = OpenAI(api_key=openai_key)
 def pdf_to_markdown(
         pdf_path: str, 
         output_dir: str,
-        mode: str = "v",
+        mode: str = "vt",
         verbose: bool = True
     ) -> str:
     """
-    Main function to convert a PDF to Markdown using GPT-4 visual reasoning.
+    Main function to convert a PDF to Markdown using GPT-4o visual reasoning.
 
     This function takes a path to a PDF file, an output directory, a mode
     indicating whether to use 'vision-only' (v) or 'vision-and-text' (vt) 
     processing, and a verbose flag. It converts the PDF to images, processes 
-    each image with GPT-4 to generate markdown text, and writes the markdown 
+    each image with GPT-4o to generate markdown text, and writes the markdown 
     text to a file with the same name as the PDF file but with a .md extension, 
     located in the output directory. If verbose is True, it also prints the 
     markdown text to the screen.
@@ -60,6 +60,7 @@ def pdf_to_markdown(
     # Setup constants and validation
     output_file_name = os.path.basename(pdf_path).rsplit('.', 1)[0] + '.md'
     output_file_path = os.path.join(output_dir, output_file_name)
+    pdf_file_name = os.path.basename(pdf_path)
 
     # Validate mode
     valid_modes = ['v', 'vt']
@@ -86,9 +87,10 @@ def pdf_to_markdown(
 
     # Build the markdown
     markdown_content = []
-    for image, prior_text in tqdm(zip(images, prior_texts)):
+    for ix, (image, prior_text) in enumerate(tqdm(zip(images, prior_texts))):
         image_base64 = _pdf_image_to_base64_str(image)
         markdown_text = _process_image_with_gpt4(image_base64, prior_text)
+        markdown_text = f"# {pdf_file_name} - Page {ix + 1}\n\n" + markdown_text
         markdown_content.append(markdown_text)
         if verbose:
             print(markdown_text)
@@ -109,25 +111,36 @@ def _process_image_with_gpt4(
         prior_text: Union[str, None] = None
     ) -> str:
     """
-    Send a base64-encoded image to GPT-4 for processing, optionally including
+    Send a base64-encoded image to GPT-4o for processing, optionally including
     prior text for context.
 
-    Constructs a prompt for GPT-4 to interpret the image as a Markdown document,
-    preserving the semantic meaning and information hierarchy, including tables.
-    If prior text is provided, it is included to assist GPT-4 in the interpretation.
+    Constructs a prompt for GPT-4o to interpret the image as a Markdown 
+    document, preserving the semantic meaning and information hierarchy, 
+    including tables. If prior text is provided, it is included to assist GPT-4o 
+    in the interpretation.
 
     Args:
         image_base64: The base64-encoded image to be processed.
         prior_text: Optional; previously extracted text to provide context.
 
     Returns:
-        The Markdown version of the image content as interpreted by GPT-4.
+        The Markdown version of the image content as interpreted by GPT-4o.
     """
     vision_base = (
         "Write a Markdown version of this page keeping as much of the semantic "
         "meaning from information hierarchy as possible. For tabular-like "
         "data (including chart data), make easy to read tables as they'd be "
-        "presented by a financial analyst."
+        "presented by a financial analyst.\n\n"
+        "DO NOT include any 'meta description' of the markdown itself, like:"
+        "\n'In the tables, the data should reflect the values provided in the "
+        "original image.'"
+        "\n'This markdown version maintains the hierarchy and clarity of the "
+        "original page using headers and tables to present the financial data "
+        "in an analyst-friendly format.'"
+        "\n'In this Markdown version, the hierarchy of information is "
+        "preserved with headers (`#`, `##`, `###`) and tables are created for"
+        "easier readability as per the data presented.'"
+        "But DO start each page with ```markdown and end with ```"
     )
 
     vision_assist = (
@@ -139,7 +152,7 @@ def _process_image_with_gpt4(
 
     prompt = f"{vision_base}{vision_assist}" if prior_text else vision_base
     response = client.chat.completions.create(
-        model="gpt-4-vision-preview",
+        model="gpt-4o",
         messages=[
             {
                 "role": "user",
@@ -190,7 +203,9 @@ def _pdf_to_images_with_storage(
             [f for f in os.listdir(image_folder) if f.endswith('.png')],
             key=lambda x: int(x.rsplit('_', 1)[-1].split('.')[0])
         )
-        images = [Image.open(os.path.join(image_folder, f)) for f in image_files]
+        images = [
+            Image.open(os.path.join(image_folder, f)) for f in image_files
+        ]
     return images
 
 
@@ -229,7 +244,7 @@ def _pdf_image_to_base64_str(pdf_page: Image) -> str:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Convert a PDF to a Markdown file using GPT-4 visual reasoning."
+        description="Convert a PDF to a Markdown file using GPT-4o visual reasoning."
     )
     parser.add_argument(
         'target_path', 
@@ -275,7 +290,9 @@ if __name__ == "__main__":
     recursive = args.recursive
     parallel = args.parallel
 
-    def process_pdf(pdf_path: str, output_dir: str, processing_mode: str, verbose: bool):
+    def process_pdf(
+            pdf_path: str, output_dir: str, processing_mode: str, verbose: bool
+        ):
         out = pdf_to_markdown(pdf_path, output_dir, processing_mode, verbose)
         print(f"Output file: {out}")
 
@@ -291,8 +308,15 @@ if __name__ == "__main__":
                     for file in files:
                         if file.lower().endswith('.pdf'):
                             pdf_path = os.path.join(root, file)
-                            output_dir = args.output_dir or os.path.dirname(pdf_path)
-                            futures.append(executor.submit(process_pdf, pdf_path, output_dir, processing_mode, verbose))
+                            output_dir = args.output_dir or \
+                                os.path.dirname(pdf_path)
+                            futures.append(
+                                executor.submit(
+                                    process_pdf, 
+                                    pdf_path, output_dir, processing_mode, 
+                                    verbose
+                                )
+                            )
                 for future in futures:
                     future.result()
         else:
@@ -300,8 +324,11 @@ if __name__ == "__main__":
                 for file in files:
                     if file.lower().endswith('.pdf'):
                         pdf_path = os.path.join(root, file)
-                        output_dir = args.output_dir or os.path.dirname(pdf_path)
-                        process_pdf(pdf_path, output_dir, processing_mode, verbose)
+                        output_dir = args.output_dir or \
+                            os.path.dirname(pdf_path)
+                        process_pdf(
+                            pdf_path, output_dir, processing_mode, verbose
+                        )
     else:
         if not os.path.isfile(target_path):
             print(f"Error: The file '{target_path}' does not exist.")
