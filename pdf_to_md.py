@@ -90,7 +90,9 @@ def pdf_to_markdown(
     for ix, (image, prior_text) in enumerate(tqdm(zip(images, prior_texts))):
         image_base64 = _pdf_image_to_base64_str(image)
         markdown_text = _process_image_with_gpt4(image_base64, prior_text)
-        markdown_text = f"# {pdf_file_name} - Page {ix + 1}\n\n" + markdown_text
+        markdown_text = (
+            f"File: {pdf_file_name}; Page: {ix + 1}\n"
+         ) + markdown_text
         markdown_content.append(markdown_text)
         if verbose:
             print(markdown_text)
@@ -265,10 +267,11 @@ if __name__ == "__main__":
         help="Toggle between 'v' for vision-only and 'vt' (default) for vision-and-text processing."
     )
     parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        default=False,
-        help="If set, print the markdown text to the screen."
+        '-q', '--quiet',
+        action='store_false',
+        default=True,
+        dest='verbose',
+        help="If set, do not print the markdown text to the screen."
     )
     parser.add_argument(
         '-r', '--recursive',
