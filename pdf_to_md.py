@@ -134,15 +134,15 @@ def _process_image_with_gpt4(
         "data (including chart data), make easy to read tables as they'd be "
         "presented by a financial analyst.\n\n"
         "DO NOT include any 'meta description' of the markdown itself, like:"
-        "\n'In the tables, the data should reflect the values provided in the "
-        "original image.'"
-        "\n'This markdown version maintains the hierarchy and clarity of the "
+        "\n- 'In the tables, the data should reflect the values provided in the"
+        " original image.'"
+        "\n- 'This markdown version maintains the hierarchy and clarity of the "
         "original page using headers and tables to present the financial data "
         "in an analyst-friendly format.'"
-        "\n'In this Markdown version, the hierarchy of information is "
+        "\n- 'In this Markdown version, the hierarchy of information is "
         "preserved with headers (`#`, `##`, `###`) and tables are created for"
-        "easier readability as per the data presented.'"
-        "But DO start each page with ```markdown and end with ```"
+        "easier readability as per the data presented.'\n"
+        "Do NOT start each page with ```markdown or end with ```."
     )
 
     vision_assist = (
